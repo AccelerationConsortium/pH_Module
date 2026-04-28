@@ -1,0 +1,3 @@
+BufferSize : 2048
+ChunkSize : 1024
+ServerPort : 2222
