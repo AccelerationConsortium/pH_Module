@@ -1,0 +1,12 @@
+[Unit]
+Description=pH Module Camera Server
+After=network.target
+
+[Service]
+ExecStart=/home/sdl2/phenv/bin/python /home/sdl2/pH_Module/server/updated_server_code.py
+WorkingDirectory=/home/sdl2/pH_Module/server
+Restart=always
+User=sdl2
+
+[Install]
+WantedBy=multi-user.target
