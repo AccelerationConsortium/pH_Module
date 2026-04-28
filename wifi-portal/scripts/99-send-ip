@@ -1,0 +1,22 @@
+#!/bin/bash
+INTERFACE=$1
+EVENT=$2
+
+if [ "$INTERFACE" = "wlan0" ] && [ "$EVENT" = "up" ]; then
+    # Wait for IP to be assigned
+    sleep 5
+
+    # Get saved recipient email
+    RECIPIENT=$(python3 -c "
+import json
+try:
+    with open('/home/sdl2/wifi-portal/recipient.json') as f:
+        print(json.load(f)['email'])
+except:
+    pass
+")
+
+    if [ -n "$RECIPIENT" ]; then
+        python3 /home/sdl2/wifi-portal/send_ip_email.py "$RECIPIENT"
+    fi
+fi

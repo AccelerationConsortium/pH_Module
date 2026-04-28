@@ -1,0 +1,10 @@
+[Unit]
+Description=WiFi Check and Hotspot Fallback
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/wifi-check.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

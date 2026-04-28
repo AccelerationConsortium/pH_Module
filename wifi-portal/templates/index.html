@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>pH Module — WiFi Setup</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0e0f11; --surface: #161719; --border: #2a2b2e; --accent: #e8a044;
+      --accent-dim: rgba(232,160,68,0.12); --text: #e2e3e5; --text-dim: #6b6e75;
+      --green: #4caf7d; --red: #e05c5c;
+      --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px; }
+    .card { background: var(--surface); border: 1px solid var(--border);
+      border-radius: 4px; width: 100%; max-width: 480px; overflow: hidden; }
+    .card-header { padding: 24px 28px 20px; border-bottom: 1px solid var(--border); }
+    .label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+    h1 { font-size: 20px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
+    .subtitle { font-size: 13px; color: var(--text-dim); margin-top: 4px; font-weight: 300; }
+    .card-body { padding: 24px 28px; }
+    .section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+      color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
+    .network-list { display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: 20px; max-height: 240px; overflow-y: auto; }
+    .network-list::-webkit-scrollbar { width: 4px; }
+    .network-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .network-item { display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border: 1px solid var(--border); border-radius: 3px;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s; user-select: none; }
+    .network-item:hover, .network-item.selected { border-color: var(--accent); background: var(--accent-dim); }
+    .network-name { font-size: 14px; font-weight: 400; }
+    .network-meta { display: flex; align-items: center; gap: 10px; }
+    .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+    .bar { width: 3px; background: var(--border); border-radius: 1px; }
+    .bar:nth-child(1) { height: 4px; } .bar:nth-child(2) { height: 7px; }
+    .bar:nth-child(3) { height: 10px; } .bar:nth-child(4) { height: 14px; }
+    .bar.active { background: var(--accent); }
+    .lock-icon { font-size: 11px; color: var(--text-dim); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    .input-group { margin-bottom: 16px; }
+    .input-label { font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+      margin-bottom: 6px; display: block; }
+    input[type="text"], input[type="password"], input[type="email"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 3px; padding: 10px 12px; color: var(--text);
+      font-family: var(--mono); font-size: 13px; outline: none; transition: border-color 0.15s; }
+    input:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--text-dim); }
+    .btn { width: 100%; padding: 12px; background: var(--accent); color: #0e0f11;
+      border: none; border-radius: 3px; font-family: var(--mono); font-size: 13px;
+      font-weight: 500; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.88; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary { background: transparent; border: 1px solid var(--border);
+      color: var(--text-dim); margin-top: 8px; }
+    .btn-secondary:hover { border-color: var(--text-dim); opacity: 1; }
+    .status { margin-top: 16px; padding: 12px 14px; border-radius: 3px;
+      font-size: 13px; font-family: var(--mono); display: none; line-height: 1.6; }
+    .status.success { background: rgba(76,175,125,0.12); border: 1px solid rgba(76,175,125,0.3);
+      color: var(--green); display: block; }
+    .status.error { background: rgba(224,92,92,0.12); border: 1px solid rgba(224,92,92,0.3);
+      color: var(--red); display: block; }
+    .status.loading { background: var(--accent-dim); border: 1px solid rgba(232,160,68,0.3);
+      color: var(--accent); display: block; }
+    .spinner { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--accent);
+      border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .no-networks { text-align: center; color: var(--text-dim); font-size: 13px;
+      padding: 20px; font-family: var(--mono); }
+    .footer { margin-top: 20px; font-size: 11px; color: var(--text-dim);
+      font-family: var(--mono); text-align: center; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <div class="label">Acceleration Consortium · SDL2</div>
+    <h1>pH Module Setup</h1>
+    <p class="subtitle">Connect this device to your WiFi network</p>
+  </div>
+  <div class="card-body">
+    <div class="section-label">Available Networks</div>
+    <div class="network-list" id="networkList">
+      {% if networks %}
+        {% for net in networks %}
+        <div class="network-item" onclick="selectNetwork('{{ net.ssid }}', {{ 'true' if net.secured else 'false' }}, {{ net.signal }})" data-ssid="{{ net.ssid }}">
+          <span class="network-name">{{ net.ssid }}</span>
+          <div class="network-meta">
+            <div class="signal-bars">
+              <div class="bar {% if net.signal >= 20 %}active{% endif %}"></div>
+              <div class="bar {% if net.signal >= 40 %}active{% endif %}"></div>
+              <div class="bar {% if net.signal >= 65 %}active{% endif %}"></div>
+              <div class="bar {% if net.signal >= 80 %}active{% endif %}"></div>
+            </div>
+            {% if net.secured %}<span class="lock-icon">🔒</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="no-networks">No networks found</div>
+      {% endif %}
+    </div>
+    <button class="btn btn-secondary" onclick="rescan()">↻ Rescan</button>
+    <div class="divider"></div>
+    <div class="input-group">
+      <label class="input-label">NETWORK (SSID)</label>
+      <input type="text" id="ssidInput" placeholder="Select above or type manually" />
+    </div>
+    <div class="input-group" id="usernameGroup" style="display:none;">
+      <label class="input-label">USERNAME (ENTERPRISE NETWORKS ONLY)</label>
+      <input type="text" id="usernameInput" placeholder="e.g. yaseen.hanfi@mail.utoronto.ca" />
+    </div>
+    <div class="input-group" id="passwordGroup">
+      <label class="input-label">PASSWORD</label>
+      <input type="password" id="passwordInput" placeholder="Enter WiFi password" />
+    </div>
+    <div class="input-group">
+      <label class="input-label">YOUR EMAIL (TO RECEIVE DEVICE IP)</label>
+      <input type="email" id="emailInput" placeholder="yourname@email.com" />
+    </div>
+    <button class="btn" id="connectBtn" onclick="connectWifi()">Connect Device</button>
+    <div class="status" id="status"></div>
+  </div>
+</div>
+<div class="footer">10.42.0.1 · pH Module 2.0</div>
+<script>
+  let selectedSecured = true;
+  const enterpriseNetworks = ['compsci', 'eduroam', 'enterprise'];
+
+  function selectNetwork(ssid, secured, signal) {
+    document.querySelectorAll('.network-item').forEach(el => el.classList.remove('selected'));
+    const el = document.querySelector(`[data-ssid="${CSS.escape(ssid)}"]`);
+    if (el) el.classList.add('selected');
+    document.getElementById('ssidInput').value = ssid;
+    selectedSecured = secured;
+    document.getElementById('passwordGroup').style.display = secured ? 'block' : 'none';
+    const isEnterprise = enterpriseNetworks.some(n => ssid.toLowerCase().includes(n));
+    document.getElementById('usernameGroup').style.display = isEnterprise ? 'block' : 'none';
+  }
+
+  function rescan() {
+    const list = document.getElementById('networkList');
+    list.innerHTML = '<div class="no-networks"><span class="spinner"></span> Scanning...</div>';
+    fetch('/scan').then(r => r.json()).then(networks => {
+      if (!networks.length) { list.innerHTML = '<div class="no-networks">No networks found</div>'; return; }
+      list.innerHTML = networks.map(net => `
+        <div class="network-item" onclick="selectNetwork('${net.ssid.replace(/'/g,"\\'")}', ${net.secured}, ${net.signal})" data-ssid="${net.ssid}">
+          <span class="network-name">${net.ssid}</span>
+          <div class="network-meta">
+            <div class="signal-bars">
+              <div class="bar ${net.signal>=20?'active':''}"></div>
+              <div class="bar ${net.signal>=40?'active':''}"></div>
+              <div class="bar ${net.signal>=65?'active':''}"></div>
+              <div class="bar ${net.signal>=80?'active':''}"></div>
+            </div>
+            ${net.secured ? '<span class="lock-icon">🔒</span>' : ''}
+          </div>
+        </div>`).join('');
+    }).catch(() => { list.innerHTML = '<div class="no-networks">Scan failed — try again</div>'; });
+  }
+
+  function connectWifi() {
+    const ssid = document.getElementById('ssidInput').value.trim();
+    const password = document.getElementById('passwordInput').value.trim();
+    const username = document.getElementById('usernameInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+    if (!ssid) { showStatus('error', 'Please select or enter a network name.'); return; }
+    const btn = document.getElementById('connectBtn');
+    btn.disabled = true;
+    showStatus('loading', '<span class="spinner"></span> Connecting to ' + ssid + '...');
+
+    fetch('/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ssid, password, username, email })
+    }).then(r => r.json()).then(data => {
+      if (data.success) {
+        showStatus('success', '✓ ' + data.message);
+      } else {
+        showStatus('error', '✗ ' + data.message);
+        btn.disabled = false;
+      }
+    }).catch(() => {
+      showStatus('success', '✓ Connected! Check your email for the device IP address.');
+    });
+  }
+
+  function showStatus(type, message) {
+    const el = document.getElementById('status');
+    el.className = 'status ' + type;
+    el.innerHTML = message;
+  }
+</script>
+</body>
+</html>

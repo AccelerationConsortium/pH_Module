@@ -1,0 +1,12 @@
+[Unit]
+Description=pH Module WiFi Setup Portal
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/sdl2/wifi-portal/app.py
+WorkingDirectory=/home/sdl2/wifi-portal
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target
