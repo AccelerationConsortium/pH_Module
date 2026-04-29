@@ -30,10 +30,6 @@ class PHTestServer(CameraServer):
         return pwm
 
     def apply_camera_controls(self):
-        """
-        Capture camera metadata to inspect current sensor values.
-        Called on startup to print live sensor values to terminal.
-        """
         if self.cam is None:
             self.logger.error("Camera not initialized - cannot read metadata")
             return None
@@ -42,27 +38,21 @@ class PHTestServer(CameraServer):
         self.logger.info(f"Camera metadata:\n{metadata}")
         print("Camera Metadata:\n", metadata)
 
-        # Disable auto controls and lock to manual mode
         self.cam.set_controls({
             "AwbEnable": False,
             "AeEnable":  False,
             "AfMode":    controls.AfModeEnum.Manual,
         })
-        self.cam.capture_metadata()  # Let the above controls take effect
+        self.cam.capture_metadata()
 
         return metadata
 
     def set_camera_controls(self, rg, bg, exp, gain, lens, autofocus=False):
-        """
-        Apply camera controls sent from client.
-        autofocus=True  → continuous autofocus, ignores lens parameter
-        autofocus=False → manual focus locked to lens value (default)
-        """
         if autofocus:
             self.cam.set_controls({
                 "AwbEnable": False,
                 "AeEnable":  False,
-                "AfMode":    controls.AfModeEnum.Continuous,  # Enable autofocus
+                "AfMode":    controls.AfModeEnum.Continuous,
                 "ColourGains":  (rg, bg),
                 "ExposureTime": exp,
                 "AnalogueGain": gain,
@@ -72,7 +62,7 @@ class PHTestServer(CameraServer):
             self.cam.set_controls({
                 "AwbEnable":    False,
                 "AeEnable":     False,
-                "AfMode":       controls.AfModeEnum.Manual,   # Fixed focus
+                "AfMode":       controls.AfModeEnum.Manual,
                 "ColourGains":  (rg, bg),
                 "ExposureTime": exp,
                 "AnalogueGain": gain,
@@ -81,14 +71,6 @@ class PHTestServer(CameraServer):
             self.logger.info(f"Camera set: rg={rg}, bg={bg}, exp={exp}, gain={gain}, lens={lens}")
 
     def run_motor(self, speed=20, duration=1, reverse=False):
-        """
-        Run motor A at the given speed for the given duration.
-        Speed, duration, and direction are sent by the client.
-        If client sends invalid params, defaults are used:
-          speed=20, duration=1s, reverse=False
-        Motor does nothing until a RUN_MOTOR command is received —
-        it does not run automatically.
-        """
         try:
             direction = "reverse" if reverse else "forward"
             self.logger.info(f"Running motor (speed={speed}, duration={duration}s, direction={direction})")
@@ -108,7 +90,6 @@ class PHTestServer(CameraServer):
             self.logger.error(f"Motor run failed: {e}")
 
     def handle_client(self, conn):
-        """Handle client connection"""
         try:
             while True:
                 msg = conn.recv(buffer_size).decode('utf-8').strip()
@@ -158,15 +139,23 @@ class PHTestServer(CameraServer):
                     params = conn.recv(buffer_size).decode('utf-8').strip()
                     try:
                         rg, bg, exp, gain, lens, autofocus = params.split(',')
-                        self.set_camera_controls(
-                            rg=float(rg),
-                            bg=float(bg),
-                            exp=int(float(exp)),
-                            gain=float(gain),
-                            lens=float(lens),
-                            autofocus=autofocus.strip().lower() == "true"
-                        )
-                        conn.sendall("CAMERA_SET\n".encode('utf-8'))
+                        for attempt in range(3):
+                            try:
+                                self.set_camera_controls(
+                                    rg=float(rg),
+                                    bg=float(bg),
+                                    exp=int(float(exp)),
+                                    gain=float(gain),
+                                    lens=float(lens),
+                                    autofocus=autofocus.strip().lower() == "true"
+                                )
+                                conn.sendall("CAMERA_SET\n".encode('utf-8'))
+                                break
+                            except Exception as e:
+                                if attempt < 2:
+                                    sleep(1)
+                                else:
+                                    raise e
                     except Exception as e:
                         conn.sendall(f"CAMERA_SET_FAILED: {e}\n".encode('utf-8'))
                         self.logger.error(f"Failed to set camera controls: {e}")
@@ -190,9 +179,8 @@ class PHTestServer(CameraServer):
 
 if __name__ == "__main__":
     ph_test_server = PHTestServer()
-    ph_test_server.apply_camera_controls()  # Print metadata on startup
+    ph_test_server.apply_camera_controls()
     ph_test_server.start_server()
 
-    # 🔒 KEEP SERVER PROCESS ALIVE
     while True:
         sleep(1)
