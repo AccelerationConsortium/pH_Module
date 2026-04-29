@@ -9,9 +9,8 @@ from picamera2 import Picamera2
 from libcamera import controls
 import board
 import neopixel
-from logger import get_logger
-from socket_utils import send_file_name, receive_file_name
-from socket_utils import send_file_size, receive_file_size
+from sdl_utils import get_logger, send_file_name, receive_file_name
+from sdl_utils import send_file_size, receive_file_size
 
 """
 This is a module for the Raspberry Pi Camera Server
